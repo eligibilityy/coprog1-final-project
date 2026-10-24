@@ -5,7 +5,7 @@
  * - Elijah Patrick Panique
  * - Kyle Christian Salvacion
  * Date:
- * Description  : Monthly Payroll Program
+ * Description: Monthly Payroll Program
  */
 
 import java.io.IOException;
@@ -24,8 +24,12 @@ public class Main {
 
     static Scanner sc = new Scanner(System.in);
 
-    // Computation Logic
-
+    /**
+     * Returns the regular (non-overtime) part of one week's hours.
+     *
+     * @param hours hours worked in a single week
+     * @return {@code hours}, capped at {@link #REGULAR_HOURS_PER_WEEK}
+     */
     static double getRegularHours(double hours) {
         if (hours > REGULAR_HOURS_PER_WEEK) {
             return REGULAR_HOURS_PER_WEEK;
@@ -33,6 +37,12 @@ public class Main {
         return hours;
     }
 
+    /**
+     * Returns the overtime part of one week's hours.
+     *
+     * @param hours hours worked in a single week
+     * @return hours above {@link #REGULAR_HOURS_PER_WEEK}, or 0 if there are none
+     */
     static double getOvertimeHours(double hours) {
         if (hours > REGULAR_HOURS_PER_WEEK) {
             return hours - REGULAR_HOURS_PER_WEEK;
@@ -40,6 +50,12 @@ public class Main {
         return 0;
     }
 
+    /**
+     * Adds up the regular hours across all weeks of the month.
+     *
+     * @param weeklyHours hours worked in each week
+     * @return total regular hours for the month
+     */
     static double computeRegularHours(double[] weeklyHours) {
         double total = 0;
         for (int i = 0; i < weeklyHours.length; i++) {
@@ -48,6 +64,12 @@ public class Main {
         return total;
     }
 
+    /**
+     * Adds up the overtime hours across all weeks of the month.
+     *
+     * @param weeklyHours hours worked in each week
+     * @return total overtime hours for the month
+     */
     static double computeOvertimeHours(double[] weeklyHours) {
         double total = 0;
         for (int i = 0; i < weeklyHours.length; i++) {
@@ -56,19 +78,45 @@ public class Main {
         return total;
     }
 
+    /**
+     * Returns the total hours worked in the month (regular plus overtime).
+     *
+     * @param weeklyHours hours worked in each week
+     * @return total hours for the month
+     */
     static double computeTotalHours(double[] weeklyHours) {
         return computeRegularHours(weeklyHours) + computeOvertimeHours(weeklyHours);
     }
 
+    /**
+     * Computes pay for regular hours.
+     *
+     * @param rate  hourly rate (PHP)
+     * @param hours regular hours worked
+     * @return regular pay (PHP)
+     */
     static double computeRegularPay(double rate, double hours) {
         return rate * hours;
     }
 
+    /**
+     * Computes pay for overtime hours at {@link #OVERTIME_MULTIPLIER} times the hourly rate.
+     *
+     * @param rate  regular hourly rate (PHP)
+     * @param hours overtime hours worked
+     * @return overtime pay (PHP)
+     */
     static double computeOvertimePay(double rate, double hours) {
         double overtimeRate = rate * OVERTIME_MULTIPLIER;
         return overtimeRate * hours;
     }
 
+    /**
+     * Computes the monthly transportation allowance. Only managers receive it.
+     *
+     * @param isManager whether the employee is a manager
+     * @return {@link #TRANSPORT_PER_WEEK} times {@link #WEEKS_IN_MONTH} for managers, otherwise 0
+     */
     static double computeAllowance(boolean isManager) {
         if (isManager) {
             return TRANSPORT_PER_WEEK * WEEKS_IN_MONTH;
@@ -76,6 +124,19 @@ public class Main {
         return 0;
     }
 
+    /**
+     * Computes the SSS contribution from gross pay.
+     *
+     * <ul>
+     *   <li>5,000 or less: flat 105.00</li>
+     *   <li>5,000.01 to 10,000: 5% of gross pay</li>
+     *   <li>10,000.01 to 15,000: 8% of gross pay + 75</li>
+     *   <li>Above 15,000: 12% of gross pay + 110</li>
+     * </ul>
+     *
+     * @param grossPay monthly gross pay (PHP)
+     * @return SSS contribution (PHP)
+     */
     static double computeSSS(double grossPay) {
         if (grossPay <= 5000) {
             return 105.00;
@@ -88,6 +149,13 @@ public class Main {
         }
     }
 
+    /**
+     * Computes the Pag-IBIG contribution from gross pay.
+     * It is a flat 100.00 for gross pay of 5,000 or less. Otherwise it is 3% of gross pay.
+     *
+     * @param grossPay monthly gross pay (PHP)
+     * @return Pag-IBIG contribution (PHP)
+     */
     static double computePagIbig(double grossPay) {
         if (grossPay <= 5000) {
             return 100.00;
@@ -96,6 +164,14 @@ public class Main {
         return grossPay * 0.03;
     }
 
+    /**
+     * Computes the PhilHealth contribution. Employees who worked fewer than
+     * 10 hours in the month pay nothing. Everyone else pays the fixed
+     * {@link #PHILHEALTH_AMOUNT}.
+     *
+     * @param totalHours total hours worked in the month
+     * @return PhilHealth contribution (PHP)
+     */
     static double computePhilhealth(double totalHours) {
         if (totalHours < 10) {
             return 0;
@@ -104,6 +180,19 @@ public class Main {
         return PHILHEALTH_AMOUNT;
     }
 
+    /**
+     * Returns the withholding tax rate for a given gross pay.
+     *
+     * <ul>
+     *   <li>10,000 or less: 3%</li>
+     *   <li>10,000.01 to 25,000: 8%</li>
+     *   <li>25,000.01 to 40,000: 11%</li>
+     *   <li>Above 40,000: 13.5%</li>
+     * </ul>
+     *
+     * @param grossPay monthly gross pay (PHP)
+     * @return tax rate as a decimal (for example, 0.08 for 8%)
+     */
     static double getTaxRate(double grossPay) {
         if (grossPay <= 10000) {
             return 0.03;
@@ -115,7 +204,15 @@ public class Main {
             return 0.135;
         }
     }
-
+    
+    /**
+     * Computes monthly gross pay: regular pay + overtime pay + allowance.
+     *
+     * @param rate        hourly rate (PHP)
+     * @param weeklyHours hours worked in each week
+     * @param isManager   whether the employee is a manager (receives allowance)
+     * @return monthly gross pay (PHP)
+     */
     static double computeGP(double rate, double[] weeklyHours, boolean isManager) {
         double regularPay = computeRegularPay(rate, computeRegularHours(weeklyHours));
         double overtimePay = computeOvertimePay(rate, computeOvertimeHours(weeklyHours));
@@ -123,14 +220,36 @@ public class Main {
         return regularPay + overtimePay + allowance;
     }
 
+    /**
+     * Computes withholding tax. The rate from {@link #getTaxRate(double)} is
+     * applied to the whole gross pay.
+     *
+     * @param grossPay monthly gross pay (PHP)
+     * @return withholding tax (PHP)
+     */
     static double computeTax(double grossPay) {
         return grossPay * getTaxRate(grossPay);
     }
 
+    /**
+     * Computes the deduction for dependents.
+     *
+     * @param dependents number of dependents
+     * @return {@code dependents} times {@link #DEDUCTION_PER_DEPENDENT} (PHP)
+     */
     static double computeDependentDed(int dependents) {
         return dependents * DEDUCTION_PER_DEPENDENT;
     }
 
+    /**
+     * Computes total deductions: SSS + Pag-IBIG + PhilHealth + withholding tax
+     * + dependent deduction.
+     *
+     * @param grossPay   monthly gross pay (PHP)
+     * @param totalHours total hours worked in the month
+     * @param dependents number of dependents
+     * @return total deductions (PHP)
+     */
     static double computeDed(double grossPay, double totalHours, int dependents) {
         double sss = computeSSS(grossPay);
         double pagibig = computePagIbig(grossPay);
@@ -140,6 +259,13 @@ public class Main {
         return sss + pagibig + philhealth + tax + dependent;
     }
 
+    /**
+     * Computes net pay (gross pay minus total deductions). Net pay never goes below 0.
+     *
+     * @param grossPay monthly gross pay (PHP)
+     * @param totalDed total deductions (PHP)
+     * @return net pay (PHP), or 0 if deductions are greater than gross pay
+     */
     static double computeNP(double grossPay, double totalDed) {
         double net = grossPay - totalDed;
         if (net < 0) {
@@ -148,6 +274,24 @@ public class Main {
         return net;
     }
 
+    /**
+     * Prints a formatted payslip. It shows employee information, an hours
+     * breakdown, earnings, each deduction, and net pay. Overtime rows are only
+     * shown when the employee worked overtime.
+     *
+     * @param lastName    employee's last name
+     * @param firstName   employee's first name
+     * @param middleName  employee's middle name (may be empty; shown as an initial)
+     * @param department  employee's department
+     * @param position    employee's position
+     * @param isManager   whether the employee is a manager
+     * @param dependents  number of dependents
+     * @param rate        hourly rate (PHP)
+     * @param weeklyHours hours worked in each week
+     * @param grossPay    monthly gross pay (PHP)
+     * @param totalDed    total deductions (PHP)
+     * @param netPay      net pay (PHP)
+     */
     static void paySlip(String lastName, String firstName, String middleName, String department, String position, boolean isManager, int dependents, double rate, double[] weeklyHours, double grossPay, double totalDed, double netPay) {
         double regularHours = computeRegularHours(weeklyHours);
         double overtimeHours = computeOvertimeHours(weeklyHours);
@@ -201,6 +345,16 @@ public class Main {
         newLine();
     }
 
+    /**
+     * Runs one payroll computation. It asks for the employee's details and
+     * weekly hours, computes gross pay, deductions, and net pay, clears the
+     * screen, and prints the payslip. It also prints a warning if deductions
+     * use up the whole gross pay.
+     *
+     * <p>Input limits: dependents 0 to 10, hourly rate 1 to 100,000, and
+     * weekly hours 0 to 168. The middle name may be left blank. All other
+     * text fields are required.</p>
+     */
     static void computePayroll() {
         System.out.println("Please enter employee information.");
         String lastName = input(prompt("Last Name"));
@@ -242,22 +396,52 @@ public class Main {
 
     // Wow estetik
 
+    /**
+     * Formats an input label so all prompts line up.
+     *
+     * @param label text to show before the input
+     * @return the label padded to 22 characters, followed by {@code ": "}
+     */
     static String prompt(String label) {
         return String.format("%-22s: ", label);
     }
 
+    /**
+     * Prints a label-value line on the payslip.
+     *
+     * @param label row label
+     * @param value text to display
+     */
     static void printRow(String label, String value) {
         System.out.printf("  %-22s: %s%n", label, value);
     }
 
+    /**
+     * Prints a label and a number on the payslip.
+     *
+     * @param label  row label
+     * @param amount value to display
+     */
     static void printAmount(String label, double amount) {
         System.out.printf("  %-22s: %,12.2f%n", label, amount);
     }
 
+    /**
+     * Prints a 40-character divider line.
+     *
+     * @param c character to repeat (for example, {@code '='} or {@code '-'})
+     */
     static void printDivider(char c) {
         System.out.println(String.valueOf(c).repeat(40));
     }
 
+    /**
+     * Reads a required line of text. It keeps asking until the user enters
+     * something that is not blank.
+     *
+     * @param prompt text shown before the input
+     * @return the entered text, with leading and trailing spaces removed
+     */
     static String input(String prompt) {
         String text;
         do {
@@ -270,6 +454,10 @@ public class Main {
         return text;
     }
 
+    /**
+     * Clears the console. It runs {@code cls} on Windows and {@code clear}
+     * on other systems. This may not work in some IDE consoles.
+     */
     static void clearScreen() {
         try {
             if (System.getProperty("os.name").toLowerCase().contains("windows")) {
@@ -293,6 +481,15 @@ public class Main {
 
     // validators
 
+    /**
+     * Reads a whole number in a range. It keeps asking until the input is a
+     * valid integer from {@code min} to {@code max} (inclusive).
+     *
+     * @param prompt text shown before the input
+     * @param min    smallest allowed value
+     * @param max    largest allowed value
+     * @return the validated number
+     */
     static int checkInt(String prompt, int min, int max) {
         while (true) {
             System.out.print(prompt);
@@ -309,6 +506,15 @@ public class Main {
         }
     }
 
+    /**
+     * Reads a decimal number in a range. It keeps asking until the input is a
+     * valid number from {@code min} to {@code max} (inclusive).
+     *
+     * @param prompt text shown before the input
+     * @param min    smallest allowed value
+     * @param max    largest allowed value
+     * @return the validated number
+     */
     static double checkDouble(String prompt, double min, double max) {
         while (true) {
             System.out.print(prompt);
@@ -325,6 +531,13 @@ public class Main {
         }
     }
 
+    /**
+     * Asks a yes/no question. It accepts Y, YES, N, or NO in any letter case
+     * and keeps asking until it gets one of them.
+     *
+     * @param prompt question shown to the user
+     * @return {@code 'Y'} for yes or {@code 'N'} for no
+     */
     static char readYesNo(String prompt) {
         while (true) {
             System.out.print(prompt);
