@@ -454,10 +454,6 @@ public class Main {
         return text;
     }
 
-    /**
-     * Clears the console. It runs {@code cls} on Windows and {@code clear}
-     * on other systems. This may not work in some IDE consoles.
-     */
     static void clearScreen() {
         try {
             if (System.getProperty("os.name").toLowerCase().contains("windows")) {
@@ -499,7 +495,7 @@ public class Main {
                 if (value >= min && value <= max) {
                     return value;
                 }
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ignored) {
 
             }
             System.out.println("Invalid input. Enter a whole number from " + min + " to " + max + ".");
